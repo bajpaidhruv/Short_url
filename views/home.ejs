@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener - Make Long URLs Short</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/icons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .copy-animation {
+            animation: pulse 1s;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .url-card {
+            transition: all 0.3s ease;
+        }
+        .url-card:hover {
+            transform: translateY(-2px);
+        }
+        .url-list-item {
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        .success-message {
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.5s ease;
+        }
+        .success-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #toast {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col items-center justify-start pt-16 px-4">
+     
+    
+    <div class="w-full max-w-4xl">
+        <!-- Toast Notification -->
+<div id="toast" class="hidden fixed top-6 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-semibold transition-transform transform scale-95 opacity-0">
+    ✅ URL Shortened Successfully!
+</div>
+
+
+
+        <div class="bg-white shadow-2xl rounded-3xl overflow-hidden">
+            <div class="p-8 bg-gradient-to-r from-blue-600 to-purple-600">
+                <h1 class="text-4xl font-bold text-center text-white">URL Shortener</h1>
+                <p class="text-center text-blue-100 mt-2">Make your long URLs short and trackable</p>
+            </div>
+
+            <div class="p-8">
+                <form action="/url" method="POST" class="mb-8" id="urlForm">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <input 
+                            type="url" 
+                            name="url" 
+                            id="urlInput"
+                            placeholder="Paste your long URL here" 
+                            required
+                            class="w-full pl-4 pr-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                        <button 
+                            type="submit" 
+                            class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:opacity-90 transition duration-300 text-lg font-semibold"
+                        >
+                            Shorten URL
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Success Message -->
+                <% if (locals.id) { %>
+                    <div class="success-message bg-green-50 border border-green-200 p-6 mb-8 rounded-2xl">
+                        <h3 class="text-lg font-semibold text-green-800 mb-4">URL Shortened Successfully!</h3>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <input 
+                                type="text" 
+                                readonly 
+                                value="http://localhost:8002/<%= id %>" 
+                                class="w-full bg-white px-4 py-3 rounded-xl text-gray-700 border border-green-200"
+                                id="shortUrl"
+                            >
+                            <button 
+                                onclick="copyUrl()"
+                                class="flex items-center gap-2 bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition"
+                                id="copyButton"
+                            >
+                                <span>Copy</span>
+                            </button>
+                        </div>
+
+                        <div class="mt-4 flex flex-col items-center gap-4">
+                            <button 
+                                id="generate-qr-btn" 
+                                class="bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition"
+                            >
+                                Generate QR Code
+                            </button>
+                            <div id="qr-code-container" class="hidden p-4 bg-white shadow-md rounded-xl"></div>
+                        </div>
+                    </div>
+                <% } %>
+
+                <!-- URL History -->
+                <% if (locals.urls && urls.length > 0) { %>
+                    <div class="bg-white shadow-lg rounded-2xl border border-gray-100">
+                        <div class="p-6 border-b border-gray-100">
+                            <h2 class="text-xl font-semibold text-gray-800">Your Recent URLs</h2>
+                        </div>
+                        <div class="divide-y divide-gray-100" id="urlList">
+                            <% urls.forEach(url => { %>
+                                <div class="url-list-item p-4 flex justify-between items-center">
+                                    <a href="<%= url.redirectURL %>" class="text-blue-600 hover:text-blue-800 font-medium" target="_blank">
+                                        <%= url.shortId %>
+                                    </a>
+                                    <a href="/qrcode/<%= url.shortId %>" class="text-blue-500 hover:text-blue-800">
+                                        Generate QR Code
+                                    </a>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL Validation
+        document.getElementById('urlForm').addEventListener('submit', (e) => {
+            const urlInput = document.getElementById('urlInput');
+            if (!urlInput.value.startsWith('http://') && !urlInput.value.startsWith('https://')) {
+                e.preventDefault();
+                urlInput.value = 'https://' + urlInput.value;
+                e.target.submit();
+            }
+        });
+        function showToast() {
+    const toast = document.getElementById('toast');
+    toast.classList.remove('hidden');
+    toast.classList.add('opacity-100', 'scale-100');
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+    }, 3000);
+}
+
+// Trigger toast when a new URL is added
+document.getElementById('urlForm').addEventListener('submit', (e) => {
+    e.preventDefault(); // Prevent form submission for testing
+    showToast();
+    setTimeout(() => e.target.submit(), 500); // Submit after animation
+});
+
+
+        // Copy URL Functionality
+        function copyUrl() {
+            const shortUrl = document.getElementById('shortUrl');
+            const copyButton = document.getElementById('copyButton');
+
+            navigator.clipboard.writeText(shortUrl.value).then(() => {
+                copyButton.innerHTML = "Copied!";
+                copyButton.classList.add("copy-animation");
+
+                setTimeout(() => {
+                    copyButton.innerHTML = "Copy";
+                    copyButton.classList.remove("copy-animation");
+                }, 2000);
+            });
+        }
+
+        // QR Code Generation
+        document.getElementById("generate-qr-btn")?.addEventListener("click", function () {
+            const shortUrl = document.getElementById("shortUrl").value;
+            const qrContainer = document.getElementById("qr-code-container");
+
+            qrContainer.innerHTML = "";
+            qrContainer.classList.remove("hidden");
+
+            new QRCode(qrContainer, {
+                text: shortUrl,
+                width: 150,
+                height: 150,
+                colorDark: "#000",
+                colorLight: "#fff",
+                correctLevel: QRCode.CorrectLevel.H,
+            });
+        });
+
+        // Smooth transitions for new URLs
+        window.onload = function() {
+            // Show success message with a fade-in effect
+            const successMessage = document.querySelector('.success-message');
+            if (successMessage) {
+                setTimeout(() => {
+                    successMessage.classList.add('show');
+                }, 100);
+            }
+
+            // Clear form input after submission
+            const urlInput = document.getElementById('urlInput');
+            if (urlInput) {
+                urlInput.value = '';
+            }
+
+            // Add smooth transition for URL list items
+            const urlList = document.getElementById('urlList');
+            if (urlList) {
+                const items = urlList.getElementsByClassName('url-list-item');
+                Array.from(items).forEach((item, index) => {
+                    item.style.opacity = '0';
+                    setTimeout(() => {
+                        item.style.opacity = '1';
+                    }, index * 100);
+                });
+            }
+        };
+    </script>
+</body>
+</html>

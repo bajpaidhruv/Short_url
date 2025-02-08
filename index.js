@@ -1,0 +1,44 @@
+const express = require('express');
+const URL = require('./models/url');
+const { connectTomongo } = require('./connect');
+const { checForAuthentication } = require("./middlewares/auth");
+const path = require('path');
+const cookieParser = require('cookie-parser');
+require('dotenv').config();
+const qrcodeRoutes=require('./routes/qrcode');
+const app = express();
+
+// Set up view engine
+app.set("view engine", "ejs");
+app.set('views', path.resolve('./views'));
+
+// Connect to MongoDB
+connectTomongo(process.env.MONGO_URI)
+    .then(() => console.log(`MongoDB connected: ${process.env.MONGO_URI}`))
+    .catch(err => console.error('MongoDB connection error:', err));
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+// Route Definitions
+const staticRouter = require('./routes/staticRouter');
+const urlRoute = require('./routes/url');
+const userRoute = require('./routes/user');
+const qrcodeGenerate = require('./routes/qrcode');
+
+app.use('/', staticRouter);
+app.use('/user', userRoute);
+app.use('/url', checForAuthentication, urlRoute);
+app.use('/qr', checForAuthentication, qrcodeGenerate);
+app.use('/qrcode',qrcodeRoutes);
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});
+
+// Start server
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
