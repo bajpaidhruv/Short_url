@@ -18,12 +18,14 @@ router.get("/", checForAuthentication, async (req, res) => {
 
 // Signup Route
 router.get("/signup", (req, res) => {
-    return res.render('signup', { port: process.env.PORT });
+    const baseUrl = req.protocol + "://" + req.get("host"); 
+    res.render("signup", { baseUrl });
 });
 
 // Login Route
 router.get("/login", (req, res) => {
-    return res.render('login', { port: process.env.PORT });
+    const baseUrl = req.protocol + "://" + req.get("host"); 
+    res.render('login', { baseUrl });
 });
 
 
