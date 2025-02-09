@@ -5,33 +5,39 @@ const userModel=require('../models/user');
 const {generateToken}=require('../service/generateJWT');
 
 
-const signup=  async (req, res) => {
+const signup = async (req, res) => {
     try {
         let { name, email, password } = req.body;
+        console.log("Signup Request:", req.body);  // Log incoming request
 
-        // Validate fields
         if (!name || !email || !password) {
-            return res.status(400).send("All fields are required.");
+            console.log("Validation Failed: Missing fields");
+            return res.status(400).json({ message: "All fields are required." });
         }
 
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        let existingUser = await userModel.findOne({ email });
+        if (existingUser) {
+            console.log("User already exists:", email);
+            return res.status(400).json({ message: "User already exists" });
+        }
 
-        // Create the user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        // console.log("Password hashed successfully");
+
         let createdUser = await userModel.create({
             name,
             email,
-            password: hashedPassword,
-            createdBy: req.user._id // Ensure this is set
+            password: hashedPassword
         });
+        // console.log("User created:", createdUser);
 
-        // const token = jwt.sign({ email }, process.env.JWT_SECRET);
-        generateToken(createdUser._id,res);
-        
-        res.status(201).redirect('/');
+        generateToken(createdUser._id, res);  
+        // return res.status(201).json({ message: "User created successfully", user: createdUser });
+        return res.redirect('/');
+
     } catch (error) {
         console.error("Error creating user:", error);
-        res.status(500).json({ message: "Error creating user", error });
+        return res.status(500).json({ message: "Error creating user", error: error.message });
     }
 };
 
