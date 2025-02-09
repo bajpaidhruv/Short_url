@@ -38,6 +38,11 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send('Something broke!');
 });
+app.post('/logout', (req, res) => {
+    res.clearCookie("token"); // Remove JWT cookie if used
+    req.session = null; // Destroy session if using express-session
+    res.redirect("/login"); // Redirect back to login
+});
 
 // Start server
 const PORT = process.env.PORT || 8000;

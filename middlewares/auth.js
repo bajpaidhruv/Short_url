@@ -15,29 +15,35 @@ const User = require("../models/user");
 
 const checForAuthentication = async (req, res, next) => {
   try {
-    const token = req.cookies.jwt;
+    const token = req.cookies.jwt; // Ensure 'jwt' matches the actual cookie name
 
     if (!token) {
-      return res.redirect('/login'); // Redirect to login page if no token
+      return res.redirect('/login'); // Redirect if no token
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        res.clearCookie("jwt"); // Clear expired token
+        return res.redirect("/login");
+      }
+      return decoded;
+    });
 
-    if (!decoded) {
-      return res.redirect('/login'); // Redirect if token is invalid
-    }
+    if (!decoded) return;
 
-    const user = await User.findById(decoded.userId).select("-password"); // Use userId from decoded token
+    const user = await User.findById(decoded.userId).select("-password");
 
     if (!user) {
-      return res.redirect("/login"); // Redirect if user not found
+      res.clearCookie("jwt"); // Clear token if user is not found
+      return res.redirect("/login");
     }
 
-    req.user = user; // Attach user to request object
-    next(); // Proceed to the next middleware or route handler
+    req.user = user;
+    next();
   } catch (error) {
-    console.error("Error in authentication middleware:", error.message);
-    res.redirect('/login'); // Redirect on error
+    console.error("Authentication error:", error.message);
+    res.clearCookie("jwt"); // Ensure cookie is removed on error
+    res.redirect('/login');
   }
 };
 

@@ -57,6 +57,16 @@ router.post("/signup", signup); // Signup logic
 router.get("/login", (req, res) => res.render("login")); // Render login page
 router.post("/login", login); // Login logic
 
-router.post("/logout", logout); // Logout logic
+
+
+
+router.post("/logout", (req, res) => {
+    res.clearCookie("jwt", { path: "/", httpOnly: true, secure: false }); // Ensure it matches the cookie name in middleware
+    req.session = null; // Destroy session if using express-session
+    res.redirect("/login"); // Redirect back to login
+});
+
+
+
 
 module.exports = router;

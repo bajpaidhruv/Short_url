@@ -2,7 +2,7 @@ const express = require('express');
 const URL = require('../models/url');
 const router = express.Router();
 const { checForAuthentication } = require('../middlewares/auth'); // Correct path
-
+const { logout } = require('../controllers/auth');
 // Home Route
 router.get("/", checForAuthentication, async (req, res) => {
     try {
@@ -28,5 +28,7 @@ router.get("/login", (req, res) => {
     res.render('login', { baseUrl });
 });
 
+// Logout Route
+router.post("/logout", logout);
 
 module.exports = router;
