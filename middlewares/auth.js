@@ -1,55 +1,52 @@
-
-
-// function checkForAuthentication(req,res,next){
-//     const tokenCookie=req.cookies?.token;
-//     req.user=null;
-//     if(!tokenCookie) return next();
-
-//     const token=tokenCookie;
-//     const user=getUser(token);
-//     req.user=user;
-//     return next();
-// }
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
 const checForAuthentication = async (req, res, next) => {
   try {
-    const token = req.cookies.jwt; // Ensure 'jwt' matches the actual cookie name
+    console.log('Cookies:', req.cookies); // Log all cookies
+    const token = req.cookies.jwt;
+    console.log('Token:', token); // Log the token
 
     if (!token) {
-      return res.redirect('/login'); // Redirect if no token
+      console.log('No token found, redirecting to login');
+      return res.redirect('/login');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) {
-        res.clearCookie("jwt"); // Clear expired token
-        return res.redirect("/login");
-      }
-      return decoded;
-    });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Decoded token:', decoded);
+    } catch (verifyError) {
+      console.error('Token verification error:', verifyError.message);
+      res.clearCookie("jwt");
+      return res.redirect("/login");
+    }
 
-    if (!decoded) return;
+    if (!decoded || !decoded.userId) {
+      console.log('Invalid decoded token');
+      res.clearCookie("jwt");
+      return res.redirect("/login");
+    }
 
     const user = await User.findById(decoded.userId).select("-password");
+    console.log('Found user:', user);
 
     if (!user) {
-      res.clearCookie("jwt"); // Clear token if user is not found
+      console.log('No user found for the given token');
+      res.clearCookie("jwt");
       return res.redirect("/login");
     }
 
     req.user = user;
     next();
   } catch (error) {
-    console.error("Authentication error:", error.message);
-    res.clearCookie("jwt"); // Ensure cookie is removed on error
+    console.error("Authentication middleware error:", error);
+    res.clearCookie("jwt");
     res.redirect('/login');
   }
 };
 
 module.exports = { checForAuthentication };
-
-
 
 // async function restrictTologin(req,res,next){
 //     const userUid=req.headers["authoriazation"];

@@ -72,7 +72,7 @@ const login = async (req, res) => {
 
 const logout = (req, res) => {
     console.log("Logging out user...");
-    res.clearCookie("token");
+    res.clearCookie("jwt");
     res.redirect('/login');
 };
 

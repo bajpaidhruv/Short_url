@@ -30,7 +30,7 @@ const qrcodeGenerate = require('./routes/qrcode');
 
 app.use('/', staticRouter);
 app.use('/user', userRoute);
-app.use('/url', checForAuthentication, urlRoute);
+app.use('/url', urlRoute);
 app.use('/qr', checForAuthentication, qrcodeGenerate);
 app.use('/qrcode',qrcodeRoutes);
 // Error Handling Middleware
@@ -42,6 +42,27 @@ app.post('/logout', (req, res) => {
     res.clearCookie("token"); // Remove JWT cookie if used
     req.session = null; // Destroy session if using express-session
     res.redirect("/login"); // Redirect back to login
+});
+
+app.get('/:shortId', async (req, res) => {     
+    const shortId = req.params.shortId;
+    console.log('Searching for shortId:', shortId);
+    
+    const entry = await URL.findOneAndUpdate({ shortId }, {
+        $push: { visitHistory: { timestamp: Date.now() } }
+    });
+    
+    console.log('Entry found:', entry);
+    if (!entry) return res.status(404).json({ error: "Short URL not found" });
+    
+    // Add https:// if missing
+    let redirectURL = entry.redirectURL;
+    if (!/^https?:\/\//i.test(redirectURL)) {
+        redirectURL = 'https://' + redirectURL;
+    }
+
+    console.log('Redirecting to:', redirectURL);
+    return res.redirect(redirectURL);
 });
 
 // Start server

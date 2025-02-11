@@ -40,42 +40,96 @@
             transform: translateY(0);
         }
         #toast {
-    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-}
-
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease-in-out;
+            z-index: 1000;
+        }
+        .sidebar.open {
+            right: 0;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        .overlay.active {
+            display: block;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #6d28d9, #4c1d95);
+        }
+        .gradient-button {
+            background: linear-gradient(135deg, #6d28d9, #4c1d95);
+            transition: all 0.3s ease;
+        }
+        .gradient-button:hover {
+            opacity: 0.9;
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col items-center justify-start pt-16 px-4">
-    <div class="absolute top-4 right-4">
-        <form action="/user/logout" method="POST">
-            <button 
-                type="submit"
-                class="flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:ring-2 focus:ring-red-400"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m0-6l3 3m0 0l-3 3m3-3H9"/>
-                </svg>
-                Logout
-            </button>
-        </form>
+    <!-- 3-dot Button -->
+    <button id="menuButton" class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-200 transition duration-300">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"/>
+        </svg>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-gray-800 text-center ">User Information</h2>
+            <div class="mt-4">
+                <p class="text-blue-600">Username: <%= user.name %></p>
+                <p class="text-blue-600">Email: <%= user.email %></p>
+            </div>
+            <form action="/user/logout" method="POST" class="mt-6">
+                <button 
+                    type="submit"
+                    class="flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:ring-2 focus:ring-red-400"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m0-6l3 3m0 0l-3 3m3-3H9"/>
+                    </svg>
+                    Logout
+                </button>
+            </form>
+        </div>
     </div>
-    
-    
-     
-    
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Rest of your content -->
     <div class="w-full max-w-4xl">
         <!-- Toast Notification -->
-<div id="toast" class="hidden fixed top-6 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-semibold transition-transform transform scale-95 opacity-0">
-    ✅ URL Shortened Successfully!
-</div>
+        <div id="toast" class="hidden fixed top-6 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-semibold transition-transform transform scale-95 opacity-0">
+            ✅ URL Shortened Successfully!
+        </div>
 
-
-
-
-
-
-        <div class="bg-white shadow-2xl rounded-3xl overflow-hidden">
-            <div class="p-8 bg-gradient-to-r from-blue-600 to-purple-600">
+        <div class="bg-white shadow-2xl rounded-3xl overflow-hidden card-hover">
+            <div class="p-8 gradient-bg">
                 <h1 class="text-4xl font-bold text-center text-white">URL Shortener</h1>
                 <p class="text-center text-blue-100 mt-2">Make your long URLs short and trackable</p>
             </div>
@@ -93,7 +147,7 @@
                         >
                         <button 
                             type="submit" 
-                            class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:opacity-90 transition duration-300 text-lg font-semibold"
+                            class="gradient-button text-white px-8 py-4 rounded-xl hover:opacity-90 transition duration-300 text-lg font-semibold"
                         >
                             Shorten URL
                         </button>
@@ -108,7 +162,7 @@
                             <input 
                                 type="text" 
                                 readonly 
-                                value="http://localhost:8002/<%= id %>" 
+                                value="https://short-url-rzkj.onrender.com/<%= id %>" 
                                 class="w-full bg-white px-4 py-3 rounded-xl text-gray-700 border border-green-200"
                                 id="shortUrl"
                             >
@@ -124,7 +178,7 @@
                         <div class="mt-4 flex flex-col items-center gap-4">
                             <button 
                                 id="generate-qr-btn" 
-                                class="bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition"
+                                class="gradient-button text-white px-6 py-3 rounded-xl hover:opacity-90 transition"
                             >
                                 Generate QR Code
                             </button>
@@ -135,7 +189,7 @@
 
                 <!-- URL History -->
                 <% if (locals.urls && urls.length > 0) { %>
-                    <div class="bg-white shadow-lg rounded-2xl border border-gray-100">
+                    <div class="bg-white shadow-lg rounded-2xl border border-gray-100 card-hover">
                         <div class="p-6 border-b border-gray-100">
                             <h2 class="text-xl font-semibold text-gray-800">Your Recent URLs</h2>
                         </div>
@@ -167,25 +221,25 @@
                 e.target.submit();
             }
         });
+
         function showToast() {
-    const toast = document.getElementById('toast');
-    toast.classList.remove('hidden');
-    toast.classList.add('opacity-100', 'scale-100');
+            const toast = document.getElementById('toast');
+            toast.classList.remove('hidden');
+            toast.classList.add('opacity-100', 'scale-100');
 
-    // Hide after 3 seconds
-    setTimeout(() => {
-        toast.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => toast.classList.add('hidden'), 300);
-    }, 3000);
-}
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
 
-// Trigger toast when a new URL is added
-document.getElementById('urlForm').addEventListener('submit', (e) => {
-    e.preventDefault(); // Prevent form submission for testing
-    showToast();
-    setTimeout(() => e.target.submit(), 500); // Submit after animation
-});
-
+        // Trigger toast when a new URL is added
+        document.getElementById('urlForm').addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevent form submission for testing
+            showToast();
+            setTimeout(() => e.target.submit(), 500); // Submit after animation
+        });
 
         // Copy URL Functionality
         function copyUrl() {
@@ -249,8 +303,21 @@ document.getElementById('urlForm').addEventListener('submit', (e) => {
                 });
             }
         };
+
+        // Sidebar Toggle
+        const menuButton = document.getElementById('menuButton');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuButton.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
     </script>
-    
-    
 </body>
 </html>
